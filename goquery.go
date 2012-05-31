@@ -134,7 +134,7 @@ func (t *Tree) Print() {
 		return sl
 	}
 				func name(c *Selector, str string) {
-					r, err := regexp.Compile("^([a-z]*)")
+					r, err := regexp.Compile("^([a-z0-9]*)")
 					if err != nil {
 						panic(err)
 					}
@@ -145,7 +145,7 @@ func (t *Tree) Print() {
 				}
 			
 				func class(c *Selector, str string) {
-					r, err := regexp.Compile(`\.[a-z\-]*`)
+					r, err := regexp.Compile(`\.[a-z0-9\-]*`)
 					if err != nil {
 						panic(err)
 					}
@@ -160,7 +160,7 @@ func (t *Tree) Print() {
 				}
 			
 				func id(c *Selector, str string) {
-					r, err := regexp.Compile(`\#[a-z\-]*`)
+					r, err := regexp.Compile(`\#[a-z0-9\-]*`)
 					if err != nil {
 						panic(err)
 					}
@@ -171,7 +171,7 @@ func (t *Tree) Print() {
 				}
 				
 				func attr(c *Selector, str string) {
-					r, err := regexp.Compile(`\[[a-z=]*\]`)
+					r, err := regexp.Compile(`\[[a-z0-9=]*\]`)
 					if err != nil {
 						panic(err)
 					}
