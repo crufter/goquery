@@ -1,13 +1,3 @@
-goquery
-=======
-
-Jquery style selector engine for HTML documents, in Go.
-
-Example
-=======
-See "remote.go" in the examples folder.
-
-```
 package main
 
 import(
@@ -22,9 +12,3 @@ func main() {
 	}
 	fmt.Println(x.Find("#eow-title").InnerHTML())
 }
-```
-This will output (if it can load the url):
-
-```
-[Bounty Killa-Look into my eyes.]
-```
