@@ -3,7 +3,6 @@ package main
 import(
 	"fmt"
 	"github.com/opesun/goquery"
-	"time"
 )
 
 var example =
@@ -22,23 +21,15 @@ var example =
 		</span>
 	</div>
 	<div class="yo hey">
-		<a href="xyz"><div class="this and that"><h8>content</h8></div></a>
+		<a href="xyz"><div class="cow sheep bunny"><h8>content</h8></div></a>
 	</div>
 </body>
 </html>
 `
 
 func main() {
-	x, _ := goquery.Parse(example)
-	tim := time.Now()
-	fmt.Println(x.Find("#eow-title").InnerHTML())
-	fmt.Println(time.Since(tim))
-	fmt.Println(x.ParsingTook)
-	//z, err := ParseUrl("http://www.youtube.com/watch?v=b_TWgkAPqok")
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-	//fmt.Println(z.Find("h1").HTML())
-	//fmt.Println(z.ParsingTook)
+	x  := goquery.Parse(example)
+	x.Find("a div").Print()
+	fmt.Println("---")
+	x.Find("a div.cow").Print()
 }
