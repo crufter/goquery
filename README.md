@@ -3,6 +3,14 @@ goquery
 
 Jquery style selector engine for HTML documents, in Go.
 
+Intended usage
+==============
+This is just a quick and dirty hack, don't expect an all around solution, but if you quickly want to scrape a few sites, you will be able to do it with this.
+
+Future
+======
+If the package sees some usage then it will get a proper parser and more comprehensive API.
+
 Example
 =======
 See "remote.go" in the examples folder.

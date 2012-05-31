@@ -28,10 +28,12 @@ func (ns Nodes) HTML() []string {
 func (ns Nodes) InnerHTML() []string {
 	s := []string{}
 	for _, v := range ns {
-		sub := v.Tree.Whole[v.Start:v.End]
-		f := strings.Index(sub, ">")+1
-		l := strings.LastIndex(sub, "<")
-		s = append(s, sub[f:l])
+		if v.Start < v.End {
+			sub := v.Tree.Whole[v.Start:v.End]
+			f := strings.Index(sub, ">")+1
+			l := strings.LastIndex(sub, "<")
+			s = append(s, sub[f:l])
+		}
 	}
 	return s
 }
@@ -134,7 +136,7 @@ func (t *Tree) Print() {
 		return sl
 	}
 				func name(c *Selector, str string) {
-					r, err := regexp.Compile("^([a-z0-9]*)")
+					r, err := regexp.Compile("^([a-zA-Z0-9]*)")
 					if err != nil {
 						panic(err)
 					}
@@ -145,7 +147,7 @@ func (t *Tree) Print() {
 				}
 			
 				func class(c *Selector, str string) {
-					r, err := regexp.Compile(`\.[a-z0-9\-]*`)
+					r, err := regexp.Compile(`\.[a-zA-Z0-9\-]*`)
 					if err != nil {
 						panic(err)
 					}
@@ -160,7 +162,7 @@ func (t *Tree) Print() {
 				}
 			
 				func id(c *Selector, str string) {
-					r, err := regexp.Compile(`\#[a-z0-9\-]*`)
+					r, err := regexp.Compile(`\#[a-zA-Z0-9\-]*`)
 					if err != nil {
 						panic(err)
 					}
@@ -171,7 +173,7 @@ func (t *Tree) Print() {
 				}
 				
 				func attr(c *Selector, str string) {
-					r, err := regexp.Compile(`\[[a-z0-9=]*\]`)
+					r, err := regexp.Compile(`\[[a-zA-Z0-9=]*\]`)
 					if err != nil {
 						panic(err)
 					}
@@ -309,9 +311,20 @@ func (ns *Nodes) Find(selector string) Nodes {
 		}
 		return name, atts
 	}
-
-// Gotta write a proper parser later. *
+	
+	// If the parser would be more clever we would not need this at all
+	func removeJunk(str string) string {
+		r, err := regexp.Compile("<!--(.*?)-->")
+		if err != nil {
+			panic(err)
+		}
+		return r.ReplaceAllString(str, "")
+	}
+	
+// Gotta write a proper parser later. * **It's a mess anyway, for example: what about self closing tags?
+// The fact is even if the tree will not have a proper structure, you are still able to scrape, especially if you dont use selectors containing spaces.
 func Parse(html string) *Tree {
+	html = removeJunk(html)
 	tim := time.Now()
 	t := &Tree{}
 	t.Whole = html
