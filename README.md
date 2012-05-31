@@ -26,7 +26,5 @@ func main() {
 This will output (if it can load the url):
 
 ```
-[
-    <a id="watch-headline-show-title" href="/artist/Bounty_Killer?feature=watch_video_title">Bounty Killer</a> - Look
-  ]
+[ <a id="watch-headline-show-title" href="/artist/Bounty_Killer?feature=watch_video_title">Bounty Killer</a> - Look ]
 ```
