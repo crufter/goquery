@@ -26,5 +26,7 @@ func main() {
 This will output (if it can load the url):
 
 ```
-[Bounty Killa-Look into my eyes.]
+[
+    <a id="watch-headline-show-title" href="/artist/Bounty_Killer?feature=watch_video_title">Bounty Killer</a> - Look
+  ]
 ```
