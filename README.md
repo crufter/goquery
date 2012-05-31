@@ -16,7 +16,7 @@ import(
 )
 
 func main() {
-	x, err := goquery.ParseUrl("http://www.youtube.com/watch?v=3-XxzRIyI_U&feature=related")
+	x, err := goquery.ParseUrl("http://www.youtube.com/watch?v=ob_nh1WMMzU")
 	if err != nil {
 		panic(err)
 	}
