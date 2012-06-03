@@ -1,12 +1,11 @@
 package main
 
-import(
+import (
 	"fmt"
 	"github.com/opesun/goquery"
 )
 
-var example =
-`<html>
+var example = `<html>
 	<head>
 		<title>
 		</title>
@@ -28,7 +27,7 @@ var example =
 `
 
 func main() {
-	x  := goquery.Parse(example)
+	x := goquery.Parse(example)
 	x.Find("a div").Print()
 	fmt.Println("---")
 	x.Find("a div.cow").Print()
