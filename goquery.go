@@ -7,6 +7,8 @@ import(
 	"net/http"
 	"io/ioutil"
 	"regexp"
+	"exp/html"
+	"bytes"
 )
 
 type Nodes []*Node
