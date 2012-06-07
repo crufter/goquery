@@ -10,5 +10,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(x.Find("#eow-title").InnerHTML())
+	x.Find("#eow-title").Print()
+	fmt.Println("---")
+	x, err = goquery.ParseUrl("http://thepiratebay.se/search/one%20day%202011/0/99/0")
+	if err != nil {
+		panic(err)
+	}
+	x.Find("a.detLink").Print()
 }

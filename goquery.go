@@ -1,63 +1,35 @@
+// Package goquery gives you Jquery like functionality to scrape/manipulate html documents.
+// The exp/html package taken from the experimental branch of the Go tree is provided to avoid installation hassle. It will be removed later, if
+// it will become part of the standard.
 package goquery
 
 import (
 	"bytes"
-	"exp/html"
+	"github.com/opesun/goquery/exp/html"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 )
+
+type W struct{
+}
+
+func (w *W) Write(p []byte) (int, error) {
+	fmt.Println(string(p))
+	return len(p), nil
+}
 
 type Nodes []*Node
 
-func (ns Nodes) Print() {
-	for _, v := range ns {
-		v.Tree.print(v, 0)
-	}
-}
-
-func (ns Nodes) HTML() []string {
-	s := []string{}
-	for _, v := range ns {
-		s = append(s, v.Tree.Whole[v.Start:v.End])
-	}
-	return s
-}
-
-func (ns Nodes) InnerHTML() []string {
-	s := []string{}
-	for _, v := range ns {
-		if v.Start < v.End {
-			sub := v.Tree.Whole[v.Start:v.End]
-			f := strings.Index(sub, ">") + 1
-			l := strings.LastIndex(sub, "<")
-			s = append(s, sub[f:l])
-		}
-	}
-	return s
-}
-
 type Node struct {
-	Tree       *Tree
-	Parent     *Node
-	Children   Nodes
-	Attributes map[string]interface{}
-	Start, End int
-	Name       string
+	*html.Node
 }
 
 type Selector struct {
 	Attributes map[string]interface{}
 	Nodename   string
-}
-
-type Tree struct {
-	Root        *Node
-	Whole       string
-	ParsingTook time.Duration
 }
 
 func getLevStr(lev int) string {
@@ -68,57 +40,78 @@ func getLevStr(lev int) string {
 	return str
 }
 
-func (t *Tree) print(n *Node, lev int) {
+func print(n *Node, lev int) {
 	if n == nil {
 		return
 	}
-	fmt.Println(getLevStr(lev), n.Name)
-	for _, v := range n.Children {
-		t.print(v, lev+1)
+	fmt.Println(getLevStr(lev), n.Data)
+	for _, v := range n.Child {
+		print(&Node{v}, lev+1)
 	}
 }
 
-func (t *Tree) Print() {
-	t.print(t.Root, 0)
+func (ns Nodes) Print() {
+	for _, v := range ns {
+		print(v, 0)
+	}
 }
 
 func recur(n *Node, action func(*Node)) {
 	action(n)
-	for _, v := range n.Children {
-		recur(v, action)
+	for _, v := range n.Child {
+		recur(&Node{v}, action)
 	}
 }
 
 func recurStop(lev int, n *Node, action func(*Node, int) bool) {
 	cont := action(n, lev)
 	if cont {
-		for _, v := range n.Children {
-			recurStop(lev+1, v, action)
+		for _, v := range n.Child {
+			recurStop(lev+1, &Node{v}, action)
 		}
 	}
+}
+
+func mapFromAttr(a []html.Attribute) map[string]string {
+	m := map[string]string{}
+	for _, v := range a {
+		m[v.Key] = v.Val
+	}
+	return m
+}
+
+func mapFromSplit(a string) map[string]struct{} {
+	m := map[string]struct{}{}
+	sp := strings.Split(a, " ")
+	for _, v := range sp {
+		m[v] = struct{}{}
+	}
+	return m
 }
 
 // This is where we decide if a Node satisfies a given selector (for example: "div.nice" or "#whatever.yoyoyo")
 func satisfiesSel(n *Node, sel Selector) bool {
 	if len(sel.Nodename) > 0 {
-		if sel.Nodename != n.Name {
+		if sel.Nodename != n.Data {
 			return false
 		}
 	}
+	attr := mapFromAttr(n.Attr)
 	for i, v := range sel.Attributes {
 		if i == "class" {
 			for _, k := range sel.Attributes["class"].([]string) {
-				classm, has := n.Attributes["class"]
+				classm, has := attr["class"]
 				if !has {
 					return false
 				}
-				_, has = classm.(map[string]struct{})[k]
-				if !has {
+				m := mapFromSplit(classm)
+				_, hasc := m[k]
+				if !hasc {
 					return false
 				}
 			}
 		} else {
-			if val, ok := n.Attributes[i]; !ok || val != v {
+			if val, ok := attr[i]; !ok || val != v {
 				return false
 			}
 		}
@@ -216,8 +209,8 @@ func find(ns *Nodes, selector string) Nodes {
 	sels = sels[1:]
 	ret := Nodes{}
 	for _, v := range n {
-		for _, j := range v.Children {
-			recurStop(0, j, func(no *Node, lev int) bool {
+		for _, j := range v.Child {
+			recurStop(0, &Node{j}, func(no *Node, lev int) bool {
 				if satisfiesSel(no, sels[lev]) {
 					if lev == len(sels)-1 {
 						ret = append(ret, no)
@@ -232,142 +225,16 @@ func find(ns *Nodes, selector string) Nodes {
 	return ret
 }
 
-func (t *Tree) Find(selector string) Nodes {
-	return find(&Nodes{t.Root}, selector)
-}
-
 func (ns *Nodes) Find(selector string) Nodes {
 	return find(ns, selector)
 }
 
-func flip(b *bool) {
-	if *b == false {
-		*b = true
-	} else {
-		*b = false
-	}
+func Parse(htm string) (Nodes, error) {
+	n, err := html.Parse(bytes.NewBufferString(htm) )
+	return Nodes{&Node{n}}, err
 }
 
-func reset(k, v *string, m map[string]interface{}) {
-	m[*k] = *v
-	*k = ""
-	*v = ""
-}
-
-func adjustAttributes(m map[string]interface{}) {
-	if v, ok := m["class"]; ok {
-		clm := map[string]struct{}{}
-		sl := strings.Split(v.(string), " ")
-		for _, k := range sl {
-			clm[k] = struct{}{}
-		}
-		m["class"] = clm
-	}
-}
-
-// See * below
-func parseTag(tag string) (string, map[string]interface{}) {
-	first_space := strings.Index(tag, " ")
-	atts := map[string]interface{}{}
-	var name string
-	if first_space > 0 {
-		name = tag[:first_space]
-		inquote := false
-		inval := false
-		key, val := "", ""
-		for i, v := range tag[first_space+1:] {
-			sv := string(v)
-			if (sv == `"` || sv == `'`) && string(tag[i-1]) != `\` {
-				flip(&inquote)
-				if !inquote {
-					reset(&key, &val, atts)
-				}
-				continue
-			}
-			if sv == " " && inval && !inquote {
-				if len(val) > 0 { // Close val
-					reset(&key, &val, atts)
-					flip(&inval)
-				}
-				continue
-			}
-			if sv == "=" && !inval {
-				flip(&inval)
-				continue
-			}
-
-			if inval {
-				val += sv
-			} else {
-				key += sv
-			}
-		}
-		if len(key) > 0 {
-			atts[key] = val
-		}
-	} else {
-		name = tag
-	}
-	if len(atts) > 0 {
-		adjustAttributes(atts)
-	}
-	return name, atts
-}
-
-// If the parser would be more clever we would not need this at all
-func removeJunk(str string) string {
-	r, err := regexp.Compile("<!--(.*?)-->")
-	if err != nil {
-		panic(err)
-	}
-	return r.ReplaceAllString(str, "")
-}
-
-// Gotta write a proper parser later. * **It's a mess anyway, for example: what about self closing tags?
-// The fact is even if the tree will not have a proper structure, you are still able to scrape, especially if you dont use selectors containing spaces.
-func Parse(html string) *Tree {
-	html = removeJunk(html)
-	tim := time.Now()
-	t := &Tree{}
-	t.Whole = html
-	pos := 0
-	var parent *Node = t.Root
-	for pos < len(html) {
-		if len(html) > pos+2 && string(html[pos:pos+2]) == "</" { // TODO: attribute value could contain </ < >...
-			jump := strings.Index(html[pos+1:], ">")
-			pos += jump - 1
-			if parent != nil {
-				parent.End = pos + jump
-				if parent.Parent != nil {
-					parent = parent.Parent
-				}
-			}
-		} else if string(html[pos]) == "<" { // TODO: attribute value could contain </ < >...
-			jump := strings.Index(html[pos+1:], ">")
-			name, atts := parseTag(html[pos+1 : pos+1+jump])
-			n := &Node{
-				Tree:       t,
-				Children:   Nodes{},
-				Name:       name,
-				Parent:     parent,
-				Start:      pos,
-				Attributes: atts,
-			}
-			if parent == nil {
-				t.Root = n
-			} else {
-				parent.Children = append(parent.Children, n)
-			}
-			parent = n
-			pos += jump
-		}
-		pos++
-	}
-	t.ParsingTook = time.Since(tim)
-	return t
-}
-
-func ParseUrl(ur string) (*Tree, error) {
+func ParseUrl(ur string) (Nodes, error) {
 	c := http.Client{}
 	resp, err := c.Get(ur)
 	if err != nil {
@@ -377,5 +244,5 @@ func ParseUrl(ur string) (*Tree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Parse(string(body)), nil
+	return Parse(string(body))
 }

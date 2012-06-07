@@ -27,7 +27,7 @@ var example = `<html>
 `
 
 func main() {
-	x := goquery.Parse(example)
+	x, _ := goquery.Parse(example)
 	x.Find("a div").Print()
 	fmt.Println("---")
 	x.Find("a div.cow").Print()
