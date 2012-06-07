@@ -11,6 +11,7 @@ var example = `
 		<title>
 		</title>
 	</head>
+</html>
 <body>
 	<div class=hey custom_attr="wow"><h2>Title here</h2></div>
 	<span><h2>Yoyoyo</h2></span>
@@ -28,7 +29,6 @@ var example = `
 
 func main() {
 	x, _ := goquery.Parse(example)
-	x.Find("a div").Print()
-	fmt.Println("---")
-	x.Find("a div.cow").Print()
+	x.Find("a div").Val("lol")
+	fmt.Println(x.Html())
 }

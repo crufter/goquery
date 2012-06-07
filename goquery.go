@@ -279,11 +279,43 @@ func htmlAll(ns Nodes, outer bool) []string {
 }
 
 func getAttr(ns Nodes, key string) string {
+	if len(ns) == 0 {
+		return ""
+	}
+	for _, v := range ns[0].Attr {
+		if v.Key == key {
+			return v.Val
+		}
+	}
 	return ""
 }
 
+func getAttrs(ns Nodes, key string) []string {
+	sl := []string{}
+	for _, j := range ns {
+		for _, v := range j.Attr {
+			if v.Key == key {
+				sl = append(sl, v.Val)
+				break
+			}
+		}
+	}
+	return sl
+}
+
 func setAttrs(ns Nodes, key, val string) {
-	
+	for _, j := range ns {
+		had := false
+		for _, k := range j.Attr {
+			if k.Key == key {
+				k.Val = val
+				had = true
+			}
+		}
+		if !had {
+			j.Attr = append(j.Attr, html.Attribute{"", key, val})
+		}
+	}
 }
 
 //
@@ -294,9 +326,63 @@ func setAttrs(ns Nodes, key, val string) {
 func (ns Nodes) AddClass(a string) {
 }
 
+// Get the value of an attribute for the first element in the set of matched elements.
+// or
+// Set one or more attributes for the set of matched elements.
+func (ns Nodes) Attr(a ...string) string {
+	if len(a) == 1 {
+		return getAttr(ns, a[0])
+	}
+	setAttrs(ns, a[0], a[1])
+	return ""
+}
 
-func (ns Nodes) Attr(key, val string) {
+// Not in jQuery.
+// Gets the value of an attribute for every element in a set.
+func (ns Nodes) Attrs(key string) []string {
+	return getAttrs(ns, key)
+}
 
+func (ns Nodes) Each(f func(index int, element *Node)) {
+	for i, v := range ns {
+		f(i, v)
+	}
+}
+
+// Reduce the set of matched elements to the one at the specified index.
+// index is an integer indicating the 0-based position of the element.
+// -index is an integer indicating the position of the element, counting backwards from the last element in the set.
+func (ns Nodes) Eq(index int) Nodes {
+	l := len(ns)
+	if index >= 0 {
+		if index > l-1 {
+			return Nodes{}
+		}
+		return Nodes{ns[index]}
+	}
+	if (l-1) + index < 0 {
+		return Nodes{}
+	}
+	return Nodes{ns[(l-1) + index]}
+}
+
+// Reduce the set of matched elements to those that /*match the selector or*/ pass the function's test.
+func (ns Nodes) Filter(f func(index int, element *Node) bool) Nodes {
+	sl := Nodes{}
+	for i, v := range ns {
+		if f(i, v) {
+			sl = append(sl, v)
+		}
+	}
+	return sl
+}
+
+// Reduce the set of matched elements to those that match the selector or pass the function's test.
+func (ns Nodes) First() Nodes {
+	if len(ns) > 1 {
+		return Nodes{ns[1]}
+	}
+	return ns
 }
 
 // Get the descendants of each element in the current set of matched elements, filtered by a selector, GoQuery object, or element.
@@ -309,11 +395,30 @@ func (ns Nodes) Length() int {
 	return len(ns)
 }
 
+func (ns Nodes) Has(selector string) Nodes {
+	return ns.Filter(
+	func(i int, e *Node) bool {
+		has := false
+		for _, v := range e.Child {
+			n := Nodes{&Node{v}}
+			if len(n.Find(selector)) > 0 {
+				has = true
+			}
+		}
+		return has
+	})
+}
+
+func (ns Nodes) HasClass(class string) bool {
+	return false
+}
+
 // Get the HTML contents of the first element in the set of matched elements.
 func (ns Nodes) Html() string {
 	return _html(ns, false)
 }
 
+// Not in jQuery.
 // Get the HTML contents of all elements in the set of matched elements.
 func (ns Nodes) HtmlAll() []string {
 	return htmlAll(ns, false)
@@ -334,11 +439,13 @@ func (ns Nodes) ParentsUntil(a ...string) Nodes {
 	return Nodes{}
 }
 
+// Not in jQuery.
 // Get the HTML contents of the first element in the set of matched elements, including the current element.
 func (ns Nodes) OuterHtml() string {
 	return _html(ns, true)
 }
 
+// Not in jQuery.
 // Get the HTML contents of all elements in the set of matched elements, including the current elements.
 func (ns Nodes) OuterHtmlAll() []string {
 	return htmlAll(ns, true)
@@ -354,7 +461,7 @@ func (ns Nodes) RemoveAttr() {
 }
 
 // Get the current value of the first element in the set of matched elements.
-// OR
+// or
 // Set the value of each element in the set of matched elements.
 func (ns Nodes) Val(a ...string) string {
 	l := len(a)
