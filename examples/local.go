@@ -5,7 +5,8 @@ import (
 	"github.com/opesun/goquery"
 )
 
-var example = `<html>
+var example = `
+<html>
 	<head>
 		<title>
 		</title>

@@ -17,4 +17,8 @@ func main() {
 		panic(err)
 	}
 	x.Find("a.detLink").Print()
+	fmt.Println("---")
+	for _, v := range x.Find("a.detLink").HtmlAll() {
+		fmt.Println(v)
+	}
 }

@@ -1,4 +1,4 @@
-// Package goquery gives you Jquery like functionality to scrape/manipulate html documents.
+// Package goquery gives you Jquery like functionality to [extract data from/manipulate] html documents.
 // The exp/html package taken from the experimental branch of the Go tree is provided to avoid installation hassle. It will be removed later, if
 // it will become part of the standard.
 package goquery
@@ -14,10 +14,11 @@ import (
 )
 
 type W struct{
+	s string
 }
 
 func (w *W) Write(p []byte) (int, error) {
-	fmt.Println(string(p))
+	w.s += string(p)
 	return len(p), nil
 }
 
@@ -225,15 +226,13 @@ func find(ns *Nodes, selector string) Nodes {
 	return ret
 }
 
-func (ns *Nodes) Find(selector string) Nodes {
-	return find(ns, selector)
-}
-
+// Parses a string which contains a html.
 func Parse(htm string) (Nodes, error) {
 	n, err := html.Parse(bytes.NewBufferString(htm) )
 	return Nodes{&Node{n}}, err
 }
 
+// Parses a html document located at url.
 func ParseUrl(ur string) (Nodes, error) {
 	c := http.Client{}
 	resp, err := c.Get(ur)
@@ -245,4 +244,125 @@ func ParseUrl(ur string) (Nodes, error) {
 		return nil, err
 	}
 	return Parse(string(body))
+}
+
+// html and htmlAll could be one func but heck I cba now.
+func _html(ns Nodes, outer bool) string {
+	if len(ns) == 0 {
+		return ""
+	}
+	w := W{}
+	if outer {
+		html.Render(&w, ns[0].Node)
+	} else {
+		for _, v := range ns[0].Node.Child {
+			html.Render(&w, v)
+		}
+	}
+	return w.s
+}
+
+func htmlAll(ns Nodes, outer bool) []string {
+	sl := []string{}
+	for _, v := range ns {
+		w := W{}
+		if outer {
+			html.Render(&w, v.Node)
+		} else {
+			for _, c := range v.Child {
+				html.Render(&w, c)
+			}
+		}
+		sl = append(sl, w.s)
+	}
+	return sl
+}
+
+func getAttr(ns Nodes, key string) string {
+	return ""
+}
+
+func setAttrs(ns Nodes, key, val string) {
+	
+}
+
+//
+// Here comes the JQuery-like API.
+//
+
+// Adds the specified class(es) to each of the set of matched elements.
+func (ns Nodes) AddClass(a string) {
+}
+
+
+func (ns Nodes) Attr(key, val string) {
+
+}
+
+// Get the descendants of each element in the current set of matched elements, filtered by a selector, GoQuery object, or element.
+func (ns *Nodes) Find(selector string) Nodes {
+	return find(ns, selector)
+}
+
+// Returns the number of elements in the GoQuery object.
+func (ns Nodes) Length() int {
+	return len(ns)
+}
+
+// Get the HTML contents of the first element in the set of matched elements.
+func (ns Nodes) Html() string {
+	return _html(ns, false)
+}
+
+// Get the HTML contents of all elements in the set of matched elements.
+func (ns Nodes) HtmlAll() []string {
+	return htmlAll(ns, false)
+}
+
+// Get the parent of each element in the current set of matched elements, optionally filtered by a selector.
+func (ns Nodes) Parent(a ...string) Nodes {
+	return Nodes{}
+}
+
+// Get the ancestors of each element in the current set of matched elements, optionally filtered by a selector.
+func (ns Nodes) Parents(a ...string) Nodes {
+	return Nodes{}
+}
+
+// Get the ancestors of each element in the current set of matched elements, up to but not including the element matched by the selector, DOM node, or jQuery object.
+func (ns Nodes) ParentsUntil(a ...string) Nodes {
+	return Nodes{}
+}
+
+// Get the HTML contents of the first element in the set of matched elements, including the current element.
+func (ns Nodes) OuterHtml() string {
+	return _html(ns, true)
+}
+
+// Get the HTML contents of all elements in the set of matched elements, including the current elements.
+func (ns Nodes) OuterHtmlAll() []string {
+	return htmlAll(ns, true)
+}
+
+
+// Remove the set of matched elements from the DOM.
+func (ns Nodes) Remove() {
+}
+
+// Remove an attribute from each element in the set of matched elements.
+func (ns Nodes) RemoveAttr() {
+}
+
+// Get the current value of the first element in the set of matched elements.
+// OR
+// Set the value of each element in the set of matched elements.
+func (ns Nodes) Val(a ...string) string {
+	l := len(a)
+	if l == 0 {
+		return getAttr(ns, "value")
+	} else if l == 1 {
+		setAttrs(ns, "value", a[0])
+		return ""
+	}
+	return "Why more args than 1?"	// Hehehe.
 }
