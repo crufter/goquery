@@ -318,10 +318,34 @@ func setAttrs(ns Nodes, key, val string) {
 	}
 }
 
+// Reduce the set of matched elements to those that /*match the selector or*/ pass the function's test.
+func filterByFunc(ns Nodes, f func(index int, element *Node) bool) Nodes {
+	sl := Nodes{}
+	for i, v := range ns {
+		if f(i, v) {
+			sl = append(sl, v)
+		}
+	}
+	return sl
+}
+
+// Reduce the set of matched elements to those that match the selector /*or pass the function's test*/.
+func filterBySelector(ns Nodes, selector string) Nodes {
+	sel := parseSelector(selector)
+	if len(sel) != 1 {
+		return Nodes{}
+	}
+	return filterByFunc(ns,
+	func(index int, e *Node) bool {
+		return satisfiesSel(e, sel[0])
+	})
+}
+
 //
 // Here comes the JQuery-like API.
 //
 
+// Unfinished
 // Adds the specified class(es) to each of the set of matched elements.
 func (ns Nodes) AddClass(a string) {
 }
@@ -366,15 +390,14 @@ func (ns Nodes) Eq(index int) Nodes {
 	return Nodes{ns[(l-1) + index]}
 }
 
-// Reduce the set of matched elements to those that /*match the selector or*/ pass the function's test.
-func (ns Nodes) Filter(f func(index int, element *Node) bool) Nodes {
-	sl := Nodes{}
-	for i, v := range ns {
-		if f(i, v) {
-			sl = append(sl, v)
-		}
+// Reduce the set of matched elements to those that match the selector or pass the function's test.
+func (ns Nodes) Filter(crit interface{}) Nodes {
+	if s, ok := crit.(string); ok {
+		return filterBySelector(ns, s)
+	} else if f, ok := crit.(func(int, *Node) bool); ok {
+		return filterByFunc(ns, f)
 	}
-	return sl
+	return Nodes{}
 }
 
 // Reduce the set of matched elements to those that match the selector or pass the function's test.
@@ -390,11 +413,34 @@ func (ns *Nodes) Find(selector string) Nodes {
 	return find(ns, selector)
 }
 
+// Check the current matched set of elements against a selector/*, element, or jQuery object*/ and return true if at least one of these elements matches the given arguments.
+func (ns Nodes) Is(selector string) bool {
+	sel := parseSelector(selector)
+	if len(sel) == 1 {
+		for _, v := range ns {
+			if satisfiesSel(v, sel[0]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Reduce the set of matched elements to the final one in the set.
+func (ns Nodes) Last() Nodes {
+	l := len(ns)
+	if l < 2 {
+		return ns
+	}
+	return Nodes{ns[l-1]}
+}
+
 // Returns the number of elements in the GoQuery object.
 func (ns Nodes) Length() int {
 	return len(ns)
 }
 
+// Reduce the set of matched elements to those that have a descendant that matches the selector or DOM element.
 func (ns Nodes) Has(selector string) Nodes {
 	return ns.Filter(
 	func(i int, e *Node) bool {
@@ -409,7 +455,19 @@ func (ns Nodes) Has(selector string) Nodes {
 	})
 }
 
-func (ns Nodes) HasClass(class string) bool {
+// Unfinished
+// Determine whether any of the matched elements are assigned the given class.
+func (ns Nodes) HasClass(cl string) bool {
+	if len(strings.Split(cl, " ")) > 1 {
+		return false
+	}
+	classes := getAttrs(ns, "class")
+	for _, v := range classes {
+		m := mapFromSplit(v)
+		if _, ok := m[cl]; ok {
+			return true
+		}
+	}
 	return false
 }
 
@@ -424,16 +482,28 @@ func (ns Nodes) HtmlAll() []string {
 	return htmlAll(ns, false)
 }
 
+// Unfinished
+// Remove elements from the set of matched elements.
+func (ns Nodes) Not(crit interface{}) Nodes {
+	if _, k := crit.(string); k {
+		
+	}
+	return Nodes{}
+}
+
+// Unfinished
 // Get the parent of each element in the current set of matched elements, optionally filtered by a selector.
 func (ns Nodes) Parent(a ...string) Nodes {
 	return Nodes{}
 }
 
+// Unfinished
 // Get the ancestors of each element in the current set of matched elements, optionally filtered by a selector.
 func (ns Nodes) Parents(a ...string) Nodes {
 	return Nodes{}
 }
 
+// Unfinished
 // Get the ancestors of each element in the current set of matched elements, up to but not including the element matched by the selector, DOM node, or jQuery object.
 func (ns Nodes) ParentsUntil(a ...string) Nodes {
 	return Nodes{}
@@ -451,13 +521,32 @@ func (ns Nodes) OuterHtmlAll() []string {
 	return htmlAll(ns, true)
 }
 
-
+// Unfinished
 // Remove the set of matched elements from the DOM.
 func (ns Nodes) Remove() {
 }
 
+// Unfinished
 // Remove an attribute from each element in the set of matched elements.
 func (ns Nodes) RemoveAttr() {
+}
+
+// Reduce the set of matched elements to a subset specified by a range of indices.
+func (ns Nodes) Slice(pos ...int) Nodes {
+	plen := len(pos)
+	l := len(ns)
+	if plen == 1 && pos[0] < l-1 && pos[0] > 0 {
+		return ns[pos[0]:]
+	} else if len(pos) == 2 && pos[0] < l-1 && pos[1] < l-1 && pos[0] > 0 && pos[1] > 0 {
+		return ns[pos[0]:pos[1]]
+	}
+	return Nodes{}
+}
+
+// Unfinished
+// Get the combined text contents of each element in the set of matched elements, including their descendants.
+func (ns Nodes) Text() string {
+	return ""
 }
 
 // Get the current value of the first element in the set of matched elements.

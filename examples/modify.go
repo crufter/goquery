@@ -31,4 +31,5 @@ func main() {
 	x, _ := goquery.Parse(example)
 	x.Find("a div").Val("lol")
 	fmt.Println(x.Html())
+	fmt.Println(x.Find("div").HasClass("yo1"))
 }
