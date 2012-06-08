@@ -318,11 +318,27 @@ func setAttrs(ns Nodes, key, val string) {
 	}
 }
 
+func removeAttr(ns Nodes, key string) Nodes {
+	for _, v := range ns {
+		for i, j := range v.Attr {
+			if j.Key == key {
+				v.Attr = append(v.Attr[:i], v.Attr[i+1:]...)
+				break
+			}
+		}
+	}
+	return ns
+}
+
 // Reduce the set of matched elements to those that /*match the selector or*/ pass the function's test.
-func filterByFunc(ns Nodes, f func(index int, element *Node) bool) Nodes {
+func filterByFunc(ns Nodes, f func(index int, element *Node) bool, negate bool) Nodes {
 	sl := Nodes{}
 	for i, v := range ns {
-		if f(i, v) {
+		verdict := f(i, v)
+		if negate {
+			verdict = !verdict
+		}
+		if verdict {
 			sl = append(sl, v)
 		}
 	}
@@ -330,7 +346,7 @@ func filterByFunc(ns Nodes, f func(index int, element *Node) bool) Nodes {
 }
 
 // Reduce the set of matched elements to those that match the selector /*or pass the function's test*/.
-func filterBySelector(ns Nodes, selector string) Nodes {
+func filterBySelector(ns Nodes, selector string, negate bool) Nodes {
 	sel := parseSelector(selector)
 	if len(sel) != 1 {
 		return Nodes{}
@@ -338,7 +354,25 @@ func filterBySelector(ns Nodes, selector string) Nodes {
 	return filterByFunc(ns,
 	func(index int, e *Node) bool {
 		return satisfiesSel(e, sel[0])
-	})
+	}, negate)
+}
+
+func recurUp(ns Nodes, f func(e *Node)) {
+	for _, v := range ns {
+		f(v)
+		if v.Parent != nil {
+			recurUp(Nodes{&Node{v.Parent}}, f)
+		}
+	}
+}
+
+func recurUpBool(ns Nodes, f func(e *Node) bool) {
+	for _, v := range ns {
+		go_on := f(v)
+		if go_on && v.Parent != nil {
+			recurUpBool(Nodes{&Node{v.Parent}}, f)
+		}
+	}
 }
 
 //
@@ -393,9 +427,9 @@ func (ns Nodes) Eq(index int) Nodes {
 // Reduce the set of matched elements to those that match the selector or pass the function's test.
 func (ns Nodes) Filter(crit interface{}) Nodes {
 	if s, ok := crit.(string); ok {
-		return filterBySelector(ns, s)
+		return filterBySelector(ns, s, false)
 	} else if f, ok := crit.(func(int, *Node) bool); ok {
-		return filterByFunc(ns, f)
+		return filterByFunc(ns, f, false)
 	}
 	return Nodes{}
 }
@@ -455,7 +489,6 @@ func (ns Nodes) Has(selector string) Nodes {
 	})
 }
 
-// Unfinished
 // Determine whether any of the matched elements are assigned the given class.
 func (ns Nodes) HasClass(cl string) bool {
 	if len(strings.Split(cl, " ")) > 1 {
@@ -482,31 +515,77 @@ func (ns Nodes) HtmlAll() []string {
 	return htmlAll(ns, false)
 }
 
-// Unfinished
 // Remove elements from the set of matched elements.
 func (ns Nodes) Not(crit interface{}) Nodes {
-	if _, k := crit.(string); k {
-		
+	if s, ok := crit.(string); ok {
+		return filterBySelector(ns, s, true)
+	} else if f, ok := crit.(func(int, *Node) bool); ok {
+		return filterByFunc(ns, f, true)
 	}
 	return Nodes{}
 }
 
-// Unfinished
 // Get the parent of each element in the current set of matched elements, optionally filtered by a selector.
 func (ns Nodes) Parent(a ...string) Nodes {
-	return Nodes{}
+	sl := Nodes{}
+	sel := []Selector{}
+	if len(a) != 0 {
+		sel = parseSelector(a[0])
+		if len(sel) != 1 {
+			return sl
+		}
+	}
+	for _, v := range ns {
+		if len(sel) == 0 {
+			sl = append(sl, v)
+		} else if satisfiesSel(&Node{v.Parent}, sel[0]) {
+			sl = append(sl, v)
+		}
+	}
+	return sl
 }
 
-// Unfinished
 // Get the ancestors of each element in the current set of matched elements, optionally filtered by a selector.
 func (ns Nodes) Parents(a ...string) Nodes {
-	return Nodes{}
+	sl := Nodes{}
+	sel := []Selector{}
+	if len(a) != 0 {
+		sel = parseSelector(a[0])
+		if len(sel) != 1 {
+			return sl
+		}
+	}
+	for _, v := range ns {
+		recurUp(Nodes{&Node{v.Parent}},
+		func(e *Node) {
+			if len(sel) == 0 {
+				sl = append(sl, e)
+			} else if satisfiesSel(&Node{e.Parent}, sel[0]) {
+				sl = append(sl, e)
+			}
+		})
+	}
+	return sl
 }
 
-// Unfinished
 // Get the ancestors of each element in the current set of matched elements, up to but not including the element matched by the selector, DOM node, or jQuery object.
-func (ns Nodes) ParentsUntil(a ...string) Nodes {
-	return Nodes{}
+func (ns Nodes) ParentsUntil(a string) Nodes {
+	sl := Nodes{}
+	sel := parseSelector(a)
+	if len(sel) == 0 {
+		return sl
+	}
+	for _, v := range ns {
+		recurUpBool(Nodes{&Node{v.Parent}},
+		func(e *Node) bool {
+			if satisfiesSel(&Node{e.Parent}, sel[0]) {
+				return false
+			}
+			sl = append(sl, e)
+			return true
+		})
+	}
+	return sl
 }
 
 // Not in jQuery.
@@ -524,11 +603,13 @@ func (ns Nodes) OuterHtmlAll() []string {
 // Unfinished
 // Remove the set of matched elements from the DOM.
 func (ns Nodes) Remove() {
+	
 }
 
-// Unfinished
 // Remove an attribute from each element in the set of matched elements.
-func (ns Nodes) RemoveAttr() {
+func (ns Nodes) RemoveAttr(key string) Nodes {
+	removeAttr(ns, key)
+	return ns
 }
 
 // Reduce the set of matched elements to a subset specified by a range of indices.
