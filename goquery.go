@@ -13,12 +13,12 @@ import (
 	"strings"
 )
 
-type W struct{
+type w struct{
 	s string
 }
 
-func (w *W) Write(p []byte) (int, error) {
-	w.s += string(p)
+func (wr *w) Write(p []byte) (int, error) {
+	wr.s += string(p)
 	return len(p), nil
 }
 
@@ -28,7 +28,7 @@ type Node struct {
 	*html.Node
 }
 
-type Selector struct {
+type selector struct {
 	Attributes map[string]interface{}
 	Nodename   string
 }
@@ -91,7 +91,7 @@ func mapFromSplit(a string) map[string]struct{} {
 }
 
 // This is where we decide if a Node satisfies a given selector (for example: "div.nice" or "#whatever.yoyoyo")
-func satisfiesSel(n *Node, sel Selector) bool {
+func satisfiesSel(n *Node, sel selector) bool {
 	if len(sel.Nodename) > 0 {
 		if sel.Nodename != n.Data {
 			return false
@@ -120,18 +120,18 @@ func satisfiesSel(n *Node, sel Selector) bool {
 	return true
 }
 
-func findRecur(ns *Nodes, selector Selector) Nodes {
+func findRecur(ns *Nodes, selec selector) Nodes {
 	sl := Nodes{}
 	for _, v := range *ns {
 		recur(v, func(n *Node) {
-			if satisfiesSel(n, selector) {
+			if satisfiesSel(n, selec) {
 				sl = append(sl, n)
 			}
 		})
 	}
 	return sl
 }
-func name(c *Selector, str string) {
+func name(c *selector, str string) {
 	r, err := regexp.Compile("^([a-zA-Z0-9]*)")
 	if err != nil {
 		panic(err)
@@ -142,7 +142,7 @@ func name(c *Selector, str string) {
 	}
 }
 
-func class(c *Selector, str string) {
+func class(c *selector, str string) {
 	r, err := regexp.Compile(`\.[a-zA-Z0-9\-]*`)
 	if err != nil {
 		panic(err)
@@ -157,7 +157,7 @@ func class(c *Selector, str string) {
 	}
 }
 
-func id(c *Selector, str string) {
+func id(c *selector, str string) {
 	r, err := regexp.Compile(`\#[a-zA-Z0-9\-]*`)
 	if err != nil {
 		panic(err)
@@ -168,7 +168,7 @@ func id(c *Selector, str string) {
 	}
 }
 
-func attr(c *Selector, str string) {
+func attr(c *selector, str string) {
 	r, err := regexp.Compile(`\[[a-zA-Z0-9=]*\]`)
 	if err != nil {
 		panic(err)
@@ -182,8 +182,8 @@ func attr(c *Selector, str string) {
 	}
 }
 
-func parseSingleSel(str string) Selector {
-	c := Selector{Attributes: map[string]interface{}{}}
+func parseSingleSel(str string) selector {
+	c := selector{Attributes: map[string]interface{}{}}
 	name(&c, str)
 	class(&c, str)
 	id(&c, str)
@@ -191,17 +191,17 @@ func parseSingleSel(str string) Selector {
 	return c
 }
 
-func parseSelector(str string) []Selector {
+func parseSelector(str string) []selector {
 	str_sl := strings.Split(str, " ")
-	sel_sl := []Selector{}
+	sel_sl := []selector{}
 	for _, v := range str_sl {
 		sel_sl = append(sel_sl, parseSingleSel(v))
 	}
 	return sel_sl
 }
 
-func find(ns *Nodes, selector string) Nodes {
-	sels := parseSelector(selector)
+func find(ns *Nodes, selec string) Nodes {
+	sels := parseSelector(selec)
 	if len(sels) < 2 {
 		return findRecur(ns, sels[0])
 	}
@@ -251,29 +251,29 @@ func _html(ns Nodes, outer bool) string {
 	if len(ns) == 0 {
 		return ""
 	}
-	w := W{}
+	wr := w{}
 	if outer {
-		html.Render(&w, ns[0].Node)
+		html.Render(&wr, ns[0].Node)
 	} else {
 		for _, v := range ns[0].Node.Child {
-			html.Render(&w, v)
+			html.Render(&wr, v)
 		}
 	}
-	return w.s
+	return wr.s
 }
 
 func htmlAll(ns Nodes, outer bool) []string {
 	sl := []string{}
 	for _, v := range ns {
-		w := W{}
+		wr := w{}
 		if outer {
-			html.Render(&w, v.Node)
+			html.Render(&wr, v.Node)
 		} else {
 			for _, c := range v.Child {
-				html.Render(&w, c)
+				html.Render(&wr, c)
 			}
 		}
-		sl = append(sl, w.s)
+		sl = append(sl, wr.s)
 	}
 	return sl
 }
@@ -528,7 +528,7 @@ func (ns Nodes) Not(crit interface{}) Nodes {
 // Get the parent of each element in the current set of matched elements, optionally filtered by a selector.
 func (ns Nodes) Parent(a ...string) Nodes {
 	sl := Nodes{}
-	sel := []Selector{}
+	sel := []selector{}
 	if len(a) != 0 {
 		sel = parseSelector(a[0])
 		if len(sel) != 1 {
@@ -548,7 +548,7 @@ func (ns Nodes) Parent(a ...string) Nodes {
 // Get the ancestors of each element in the current set of matched elements, optionally filtered by a selector.
 func (ns Nodes) Parents(a ...string) Nodes {
 	sl := Nodes{}
-	sel := []Selector{}
+	sel := []selector{}
 	if len(a) != 0 {
 		sel = parseSelector(a[0])
 		if len(sel) != 1 {
