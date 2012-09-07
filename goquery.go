@@ -5,15 +5,15 @@ package goquery
 
 import (
 	"bytes"
-	"github.com/opesun/goquery/exp/html"
 	"fmt"
+	"github.com/opesun/goquery/exp/html"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
 )
 
-type w struct{
+type w struct {
 	s string
 }
 
@@ -228,7 +228,7 @@ func find(ns *Nodes, selec string) Nodes {
 
 // Parses a string which contains a html.
 func Parse(htm string) (Nodes, error) {
-	n, err := html.Parse(bytes.NewBufferString(htm) )
+	n, err := html.Parse(bytes.NewBufferString(htm))
 	return Nodes{&Node{n}}, err
 }
 
@@ -352,9 +352,9 @@ func filterBySelector(ns Nodes, selector string, negate bool) Nodes {
 		return Nodes{}
 	}
 	return filterByFunc(ns,
-	func(index int, e *Node) bool {
-		return satisfiesSel(e, sel[0])
-	}, negate)
+		func(index int, e *Node) bool {
+			return satisfiesSel(e, sel[0])
+		}, negate)
 }
 
 func recurUp(ns Nodes, f func(e *Node)) {
@@ -418,10 +418,10 @@ func (ns Nodes) Eq(index int) Nodes {
 		}
 		return Nodes{ns[index]}
 	}
-	if (l-1) + index < 0 {
+	if (l-1)+index < 0 {
 		return Nodes{}
 	}
-	return Nodes{ns[(l-1) + index]}
+	return Nodes{ns[(l-1)+index]}
 }
 
 // Reduce the set of matched elements to those that match the selector or pass the function's test.
@@ -477,16 +477,16 @@ func (ns Nodes) Length() int {
 // Reduce the set of matched elements to those that have a descendant that matches the selector or DOM element.
 func (ns Nodes) Has(selector string) Nodes {
 	return ns.Filter(
-	func(i int, e *Node) bool {
-		has := false
-		for _, v := range e.Child {
-			n := Nodes{&Node{v}}
-			if len(n.Find(selector)) > 0 {
-				has = true
+		func(i int, e *Node) bool {
+			has := false
+			for _, v := range e.Child {
+				n := Nodes{&Node{v}}
+				if len(n.Find(selector)) > 0 {
+					has = true
+				}
 			}
-		}
-		return has
-	})
+			return has
+		})
 }
 
 // Determine whether any of the matched elements are assigned the given class.
@@ -557,13 +557,13 @@ func (ns Nodes) Parents(a ...string) Nodes {
 	}
 	for _, v := range ns {
 		recurUp(Nodes{&Node{v.Parent}},
-		func(e *Node) {
-			if len(sel) == 0 {
-				sl = append(sl, e)
-			} else if satisfiesSel(&Node{e.Parent}, sel[0]) {
-				sl = append(sl, e)
-			}
-		})
+			func(e *Node) {
+				if len(sel) == 0 {
+					sl = append(sl, e)
+				} else if satisfiesSel(&Node{e.Parent}, sel[0]) {
+					sl = append(sl, e)
+				}
+			})
 	}
 	return sl
 }
@@ -577,13 +577,13 @@ func (ns Nodes) ParentsUntil(a string) Nodes {
 	}
 	for _, v := range ns {
 		recurUpBool(Nodes{&Node{v.Parent}},
-		func(e *Node) bool {
-			if satisfiesSel(&Node{e.Parent}, sel[0]) {
-				return false
-			}
-			sl = append(sl, e)
-			return true
-		})
+			func(e *Node) bool {
+				if satisfiesSel(&Node{e.Parent}, sel[0]) {
+					return false
+				}
+				sl = append(sl, e)
+				return true
+			})
 	}
 	return sl
 }
@@ -603,7 +603,7 @@ func (ns Nodes) OuterHtmlAll() []string {
 // Unfinished
 // Remove the set of matched elements from the DOM.
 func (ns Nodes) Remove() {
-	
+
 }
 
 // Remove an attribute from each element in the set of matched elements.
@@ -641,5 +641,5 @@ func (ns Nodes) Val(a ...string) string {
 		setAttrs(ns, "value", a[0])
 		return ""
 	}
-	return "Why more args than 1?"	// Hehehe.
+	return "Why more args than 1?" // Hehehe.
 }
