@@ -6,7 +6,7 @@ package goquery
 import (
 	"bytes"
 	"fmt"
-	"github.com/opesun/goquery/exp/html"
+	"github.com/mattbaird/goquery/exp/html"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -143,7 +143,7 @@ func name(c *selector, str string) {
 }
 
 func class(c *selector, str string) {
-	r, err := regexp.Compile(`\.[a-zA-Z0-9\-]*`)
+	r, err := regexp.Compile(`\.[a-zA-Z0-9\-\_]*`)
 	if err != nil {
 		panic(err)
 	}
@@ -158,7 +158,7 @@ func class(c *selector, str string) {
 }
 
 func id(c *selector, str string) {
-	r, err := regexp.Compile(`\#[a-zA-Z0-9\-]*`)
+	r, err := regexp.Compile(`\#[a-zA-Z0-9\-\_]*`)
 	if err != nil {
 		panic(err)
 	}

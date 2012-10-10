@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/opesun/goquery"
+	"github.com/mattbaird/goquery"
 )
 
 var example = `
