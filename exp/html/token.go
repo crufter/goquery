@@ -5,8 +5,8 @@
 package html
 
 import (
+	"./atom"
 	"bytes"
-	"github.com/opesun/exp/html/atom"
 	"io"
 	"strconv"
 	"strings"
