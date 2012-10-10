@@ -6,7 +6,7 @@ package goquery
 import (
 	"bytes"
 	"fmt"
-	"github.com/opesun/goquery/exp/html"
+	"github.com/mattbaird/goquery/exp/html"
 	"io/ioutil"
 	"net/http"
 	"regexp"
