@@ -5,8 +5,8 @@
 package html
 
 import (
-	"./atom"
 	"bytes"
+	"github.com/mattbaird/goquery/exp/html/atom"
 	"io"
 	"strconv"
 	"strings"
