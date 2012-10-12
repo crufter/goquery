@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/mattbaird/goquery"
+	"github.com/opesun/goquery"
 )
 
 func main() {
