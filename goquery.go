@@ -6,7 +6,7 @@ package goquery
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -227,24 +227,25 @@ func find(ns *Nodes, selec string) Nodes {
 	return ret
 }
 
-// Parses a string which contains a html.
-func Parse(htm string) (Nodes, error) {
-	n, err := html.Parse(bytes.NewBufferString(htm))
+// Parse a stream of html.
+func Parse(r io.Reader) (Nodes, error) {
+	n, err := html.Parse(r)
 	return Nodes{&Node{n}}, err
+}
+
+// Parses a string which contains a html.
+func ParseString(htm string) (Nodes, error) {
+	return Parse(bytes.NewBufferString(htm))
 }
 
 // Parses a html document located at url.
 func ParseUrl(ur string) (Nodes, error) {
-	c := http.Client{}
-	resp, err := c.Get(ur)
+	resp, err := http.Get(ur)
 	if err != nil {
 		return nil, err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return Parse(string(body))
+	defer resp.Body.Close()
+	return Parse(resp.Body)
 }
 
 // html and htmlAll could be one func but heck I cba now.
