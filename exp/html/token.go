@@ -6,10 +6,11 @@ package html
 
 import (
 	"bytes"
-	"github.com/mattbaird/goquery/exp/html/atom"
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/opesun/goquery/exp/html/atom"
 )
 
 // A TokenType is the type of a Token.

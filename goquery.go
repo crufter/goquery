@@ -6,11 +6,12 @@ package goquery
 import (
 	"bytes"
 	"fmt"
-	"github.com/opesun/goquery/exp/html"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/opesun/goquery/exp/html"
 )
 
 type w struct {
