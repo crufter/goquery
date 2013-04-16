@@ -6,11 +6,13 @@ package goquery
 import (
 	"bytes"
 	"fmt"
-	"github.com/opesun/goquery/exp/html"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
+
+	"github.com/opesun/goquery/exp/html"
 )
 
 type w struct {
@@ -41,20 +43,24 @@ func getLevStr(lev int) string {
 	return str
 }
 
-func print(n *Node, lev int) {
+func fprint(w io.Writer, n *Node, lev int) {
 	if n == nil {
 		return
 	}
-	fmt.Println(getLevStr(lev), n.Data)
+	fmt.Fprintln(w, getLevStr(lev), n.Data)
 	for _, v := range n.Child {
-		print(&Node{v}, lev+1)
+		fprint(w, &Node{v}, lev+1)
+	}
+}
+
+func (ns Nodes) Fprint(w io.Writer) {
+	for _, v := range ns {
+		fprint(w, v, 0)
 	}
 }
 
 func (ns Nodes) Print() {
-	for _, v := range ns {
-		print(v, 0)
-	}
+	ns.Fprint(os.Stdout)
 }
 
 func recur(n *Node, action func(*Node)) {
@@ -226,24 +232,25 @@ func find(ns *Nodes, selec string) Nodes {
 	return ret
 }
 
-// Parses a string which contains a html.
-func Parse(htm string) (Nodes, error) {
-	n, err := html.Parse(bytes.NewBufferString(htm))
+// Parse a stream of html.
+func Parse(r io.Reader) (Nodes, error) {
+	n, err := html.Parse(r)
 	return Nodes{&Node{n}}, err
+}
+
+// Parses a string which contains a html.
+func ParseString(htm string) (Nodes, error) {
+	return Parse(bytes.NewBufferString(htm))
 }
 
 // Parses a html document located at url.
 func ParseUrl(ur string) (Nodes, error) {
-	c := http.Client{}
-	resp, err := c.Get(ur)
+	resp, err := http.Get(ur)
 	if err != nil {
 		return nil, err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return Parse(string(body))
+	defer resp.Body.Close()
+	return Parse(resp.Body)
 }
 
 // html and htmlAll could be one func but heck I cba now.
@@ -624,10 +631,27 @@ func (ns Nodes) Slice(pos ...int) Nodes {
 	return Nodes{}
 }
 
-// Unfinished
+func text(buf *bytes.Buffer, n *Node) {
+	if n == nil {
+		return
+	}
+	if n.Type == html.TextNode {
+		fmt.Fprintf(buf, "%v", n.Data)
+	}
+	for _, v := range n.Child {
+		text(buf, &Node{v})
+	}
+}
+
 // Get the combined text contents of each element in the set of matched elements, including their descendants.
 func (ns Nodes) Text() string {
-	return ""
+	buf := &bytes.Buffer{}
+
+	for _, v := range ns {
+		text(buf, v)
+	}
+
+	return buf.String()
 }
 
 // Get the current value of the first element in the set of matched elements.
