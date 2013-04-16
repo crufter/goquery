@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -42,20 +43,24 @@ func getLevStr(lev int) string {
 	return str
 }
 
-func print(n *Node, lev int) {
+func fprint(w io.Writer, n *Node, lev int) {
 	if n == nil {
 		return
 	}
-	fmt.Println(getLevStr(lev), n.Data)
+	fmt.Fprintln(w, getLevStr(lev), n.Data)
 	for _, v := range n.Child {
-		print(&Node{v}, lev+1)
+		fprint(w, &Node{v}, lev+1)
+	}
+}
+
+func (ns Nodes) Fprint(w io.Writer) {
+	for _, v := range ns {
+		fprint(w, v, 0)
 	}
 }
 
 func (ns Nodes) Print() {
-	for _, v := range ns {
-		print(v, 0)
-	}
+	ns.Fprint(os.Stdout)
 }
 
 func recur(n *Node, action func(*Node)) {
@@ -626,10 +631,27 @@ func (ns Nodes) Slice(pos ...int) Nodes {
 	return Nodes{}
 }
 
-// Unfinished
+func text(buf *bytes.Buffer, n *Node) {
+	if n == nil {
+		return
+	}
+	if n.Type == html.TextNode {
+		fmt.Fprintf(buf, "%v", n.Data)
+	}
+	for _, v := range n.Child {
+		text(buf, &Node{v})
+	}
+}
+
 // Get the combined text contents of each element in the set of matched elements, including their descendants.
 func (ns Nodes) Text() string {
-	return ""
+	buf := &bytes.Buffer{}
+
+	for _, v := range ns {
+		text(buf, v)
+	}
+
+	return buf.String()
 }
 
 // Get the current value of the first element in the set of matched elements.
