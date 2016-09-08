@@ -1,3 +1,8 @@
+Caution!
+
+This library was created before the other with the same name (https://github.com/PuerkitoBio/goquery), but after I saw that there is a new project doing the same thing, I abandoned this.
+Use the PuerkitoBio's one. Cheers.
+
 goquery
 =======
 
